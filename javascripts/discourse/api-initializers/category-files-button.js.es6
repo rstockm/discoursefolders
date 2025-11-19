@@ -4,11 +4,26 @@ import { ajax } from "discourse/lib/ajax";
 export default apiInitializer("0.11.7", (api) => {
   // Button dynamisch über JavaScript hinzufügen
   api.onPageChange(() => {
+    // Warte kurz, damit das DOM vollständig geladen ist
+    setTimeout(() => {
+      const category = getCurrentCategory();
+      if (category) {
+        console.log("[Category Files Button] Kategorie gefunden:", category);
+        addFilesButtonIfNotExists(category);
+      } else {
+        console.log("[Category Files Button] Keine Kategorie gefunden");
+      }
+    }, 500);
+  });
+
+  // Auch direkt beim Laden versuchen
+  setTimeout(() => {
     const category = getCurrentCategory();
     if (category) {
+      console.log("[Category Files Button] Initial - Kategorie gefunden:", category);
       addFilesButtonIfNotExists(category);
     }
-  });
+  }, 1000);
 });
 
 function getCurrentCategory() {
@@ -58,27 +73,64 @@ function getCurrentCategory() {
 function addFilesButtonIfNotExists(category) {
   // Prüfen ob Button bereits existiert
   if (document.querySelector(".category-files-button-dynamic")) {
+    console.log("[Category Files Button] Button existiert bereits");
     return;
   }
 
-  // Button-Container finden - verschiedene mögliche Selektoren
-  const header = document.querySelector(".category-title-buttons") ||
-                 document.querySelector(".category-header") || 
-                 document.querySelector(".category-header-contents") ||
-                 document.querySelector(".category-title") ||
-                 document.querySelector(".category-box") ||
-                 document.querySelector(".category-title-wrapper");
+  // Suche nach verschiedenen möglichen Containern
+  const selectors = [
+    ".category-title-buttons",
+    ".category-header",
+    ".category-header-contents",
+    ".category-title",
+    ".category-box",
+    ".category-title-wrapper",
+    ".list-controls",
+    ".navigation-container",
+    "[data-category-id]",
+  ];
+
+  let header = null;
+  for (const selector of selectors) {
+    header = document.querySelector(selector);
+    if (header) {
+      console.log("[Category Files Button] Container gefunden:", selector);
+      break;
+    }
+  }
 
   if (!header) {
     // Wenn kein Header gefunden, versuche nach dem Category-Title zu suchen
-    const categoryTitle = document.querySelector(".category-title h1");
-    if (categoryTitle && categoryTitle.parentElement) {
-      const wrapper = categoryTitle.parentElement;
+    const categoryTitle = document.querySelector(".category-title h1") ||
+                         document.querySelector("h1.category-title") ||
+                         document.querySelector("h1");
+    
+    if (categoryTitle) {
+      console.log("[Category Files Button] Category-Title gefunden, erstelle Container");
+      const wrapper = categoryTitle.parentElement || categoryTitle.closest(".category-title") || document.querySelector(".list-controls");
+      if (wrapper) {
+        const buttonContainer = document.createElement("div");
+        buttonContainer.className = "category-title-buttons";
+        buttonContainer.style.marginLeft = "1em";
+        wrapper.appendChild(buttonContainer);
+        addButtonToContainer(buttonContainer, category);
+        return;
+      }
+    }
+    
+    // Letzter Fallback: Füge Button nach dem Heading hinzu
+    const heading = document.querySelector("h1");
+    if (heading && heading.parentElement) {
+      console.log("[Category Files Button] Füge Button nach Heading hinzu");
       const buttonContainer = document.createElement("div");
       buttonContainer.className = "category-title-buttons";
-      wrapper.appendChild(buttonContainer);
+      buttonContainer.style.marginTop = "0.5em";
+      heading.parentElement.insertBefore(buttonContainer, heading.nextSibling);
       addButtonToContainer(buttonContainer, category);
+      return;
     }
+    
+    console.log("[Category Files Button] Kein Container gefunden!");
     return;
   }
 
@@ -91,12 +143,16 @@ function addButtonToContainer(container, category) {
   button.className = "btn btn-default category-files-button category-files-button-dynamic";
   button.innerHTML = '<i class="fa fa-file"></i> Dateien';
   button.title = "Dateien";
-  button.addEventListener("click", () => {
+  button.style.marginLeft = "0.5em";
+  button.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     openFilesPopup(null, category);
   });
 
   // Button zum Container hinzufügen
   container.appendChild(button);
+  console.log("[Category Files Button] Button hinzugefügt zu:", container.className || container.tagName);
 }
 
 function openFilesPopup(apiOrNull, category) {
