@@ -1,5 +1,22 @@
 .category-files-button {
   margin-left: 0.5em;
+  background-color: #2d5016 !important;
+  border-radius: 999px !important;
+  color: white !important;
+  border: none !important;
+  padding: 0.5em 1em !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.5em !important;
+  
+  i, .d-icon {
+    color: white !important;
+  }
+  
+  &:hover {
+    background-color: #1f350f !important;
+    color: white !important;
+  }
 }
 
 .category-files-popup {

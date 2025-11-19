@@ -141,7 +141,7 @@ function addButtonToContainer(container, category) {
   // Button erstellen
   const button = document.createElement("button");
   button.className = "btn btn-default category-files-button category-files-button-dynamic";
-  button.innerHTML = '<i class="fa fa-file"></i> Dateien';
+  button.innerHTML = '<i class="fa fa-reply"></i> Dateien';
   button.title = "Dateien";
   button.style.marginLeft = "0.5em";
   button.addEventListener("click", (e) => {
