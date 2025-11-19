@@ -430,19 +430,146 @@ function displayFiles(files) {
     <ul class="category-files-list">
       ${files
         .map(
-          (file) => `
+          (file) => {
+            const isImage = isImageFile(file.url);
+            const imageClass = isImage ? "category-files-image-link" : "";
+            return `
         <li class="category-files-list-item">
-          <a href="${file.url}" target="_blank" rel="noopener noreferrer">
+          <a href="${file.url}" 
+             target="_blank" 
+             rel="noopener noreferrer"
+             class="${imageClass}"
+             data-image-url="${isImage ? file.url : ""}"
+             data-filename="${escapeHtml(file.filename)}">
             ${escapeHtml(file.filename)}
+            ${isImage ? ' <i class="fa fa-image"></i>' : ""}
           </a>
         </li>
-      `
+      `;
+          }
         )
         .join("")}
     </ul>
   `;
 
   content.innerHTML = filesHtml;
+
+  // Hover-Events für Bilder hinzufügen
+  setupImagePreview();
+}
+
+function isImageFile(url) {
+  const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".svg", ".bmp", ".webp", ".ico"];
+  const lowerUrl = url.toLowerCase();
+  
+  // Prüfe Dateiendung
+  if (imageExtensions.some((ext) => lowerUrl.includes(ext))) {
+    return true;
+  }
+  
+  // Prüfe ob es ein Discourse-Upload-Bild ist
+  if (url.includes("/uploads/") && (url.includes("optimized") || url.match(/\.(jpg|jpeg|png|gif|svg|webp)/i))) {
+    return true;
+  }
+  
+  return false;
+}
+
+function setupImagePreview() {
+  const imageLinks = document.querySelectorAll(".category-files-image-link");
+  
+  imageLinks.forEach((link) => {
+    const imageUrl = link.getAttribute("data-image-url");
+    if (!imageUrl) {
+      return;
+    }
+
+    let previewElement = null;
+    let hideTimeout = null;
+
+    link.addEventListener("mouseenter", (e) => {
+      // Verzögere das Anzeigen leicht, um versehentliche Hovers zu vermeiden
+      clearTimeout(hideTimeout);
+      
+      setTimeout(() => {
+        if (!previewElement) {
+          previewElement = createImagePreview(imageUrl, link);
+          document.body.appendChild(previewElement);
+        }
+        previewElement.style.display = "block";
+        positionImagePreview(previewElement, e);
+      }, 300);
+    });
+
+    link.addEventListener("mousemove", (e) => {
+      if (previewElement) {
+        positionImagePreview(previewElement, e);
+      }
+    });
+
+    link.addEventListener("mouseleave", () => {
+      if (previewElement) {
+        hideTimeout = setTimeout(() => {
+          if (previewElement) {
+            previewElement.style.display = "none";
+          }
+        }, 200);
+      }
+    });
+  });
+}
+
+function createImagePreview(imageUrl, linkElement) {
+  const preview = document.createElement("div");
+  preview.className = "category-files-image-preview";
+  
+  const img = document.createElement("img");
+  img.src = imageUrl;
+  img.alt = linkElement.getAttribute("data-filename") || "Bildvorschau";
+  img.onerror = () => {
+    preview.style.display = "none";
+  };
+  
+  preview.appendChild(img);
+  return preview;
+}
+
+function positionImagePreview(previewElement, event) {
+  if (!previewElement) {
+    return;
+  }
+
+  const mouseX = event.clientX;
+  const mouseY = event.clientY;
+  const previewWidth = 300;
+  const previewHeight = 300;
+  const offset = 15;
+
+  let left = mouseX + offset;
+  let top = mouseY + offset;
+
+  // Prüfe ob die Vorschau über den rechten Rand hinausgeht
+  if (left + previewWidth > window.innerWidth) {
+    left = mouseX - previewWidth - offset;
+  }
+
+  // Prüfe ob die Vorschau über den unteren Rand hinausgeht
+  if (top + previewHeight > window.innerHeight) {
+    top = mouseY - previewHeight - offset;
+  }
+
+  // Stelle sicher, dass die Vorschau nicht über den oberen Rand hinausgeht
+  if (top < 0) {
+    top = offset;
+  }
+
+  // Stelle sicher, dass die Vorschau nicht über den linken Rand hinausgeht
+  if (left < 0) {
+    left = offset;
+  }
+
+  previewElement.style.left = `${left}px`;
+  previewElement.style.top = `${top}px`;
 }
 
 function displayError(error) {

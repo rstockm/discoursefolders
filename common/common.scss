@@ -100,3 +100,36 @@
   background: rgba(0, 0, 0, 0.5);
   z-index: 999;
 }
+
+.category-files-image-link {
+  position: relative;
+  cursor: pointer;
+  
+  .fa-image {
+    margin-left: 0.3em;
+    color: var(--primary-medium);
+  }
+}
+
+.category-files-image-preview {
+  position: fixed;
+  z-index: 1001;
+  display: none;
+  background: var(--secondary);
+  border: 2px solid var(--primary);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  padding: 4px;
+  pointer-events: none;
+  max-width: 400px;
+  max-height: 400px;
+  
+  img {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    border-radius: 2px;
+  }
+}
