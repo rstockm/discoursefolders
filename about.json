@@ -1,0 +1,14 @@
+{
+  "name": "Category Files Button",
+  "component": true,
+  "about_url": null,
+  "license_url": null,
+  "authors": null,
+  "theme_version": "1.0.0",
+  "minimum_discourse_version": "3.5.0",
+  "maximum_discourse_version": null,
+  "assets": {},
+  "color_schemes": {},
+  "modifiers": {},
+  "learn_more": "https://meta.discourse.org/t/beginners-guide-to-using-discourse-themes/91966"
+}

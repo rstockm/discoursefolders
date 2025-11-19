@@ -1,0 +1,10 @@
+{{#if category}}
+  <button 
+    class="btn btn-default category-files-button" 
+    {{action "openCategoryFilesPopup" category}}
+    title={{i18n "category_files_button.title"}}
+  >
+    {{d-icon "file"}}
+    {{i18n "category_files_button.title"}}
+  </button>
+{{/if}}

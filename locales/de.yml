@@ -1,0 +1,7 @@
+de:
+  category_files_button:
+    title: "Dateien"
+    description: "Zeigt alle in dieser Kategorie verlinkten Dateien an"
+    loading: "Lade Dateien..."
+    no_files: "Keine Dateien gefunden."
+    error: "Fehler beim Laden der Dateien"
