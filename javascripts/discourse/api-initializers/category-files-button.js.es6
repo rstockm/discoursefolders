@@ -2,24 +2,58 @@ import { apiInitializer } from "discourse/lib/api";
 import { ajax } from "discourse/lib/ajax";
 
 export default apiInitializer("0.11.7", (api) => {
-  // Event-Handler für den Button aus dem Template
-  api.modifyClass("component:category-header", {
-    actions: {
-      openCategoryFilesPopup(category) {
-        openFilesPopup(api, category);
-      },
-    },
-  });
-
-  // Alternative: Button dynamisch über JavaScript hinzufügen
-  // Falls das Template nicht funktioniert, kann dieser Code verwendet werden
+  // Button dynamisch über JavaScript hinzufügen
   api.onPageChange(() => {
-    const category = api.getCurrentCategory();
+    const category = getCurrentCategory();
     if (category) {
       addFilesButtonIfNotExists(category);
     }
   });
 });
+
+function getCurrentCategory() {
+  // Versuche Kategorie aus dem DOM zu holen
+  const categoryElement = document.querySelector("[data-category-id]");
+  if (categoryElement) {
+    const categoryId = parseInt(categoryElement.getAttribute("data-category-id"));
+    const categoryName = categoryElement.getAttribute("data-category-name") || 
+                        document.querySelector(".category-title h1")?.textContent?.trim() ||
+                        "Unbekannt";
+    
+    return {
+      id: categoryId,
+      name: categoryName,
+    };
+  }
+
+  // Fallback: Versuche aus der URL zu extrahieren
+  const urlMatch = window.location.pathname.match(/\/c\/([^\/]+)\/(\d+)/);
+  if (urlMatch) {
+    return {
+      id: parseInt(urlMatch[2]),
+      name: urlMatch[1].replace(/-/g, " "),
+    };
+  }
+
+  // Versuche aus Discourse's App zu holen
+  try {
+    const app = window.__discourse__?.app;
+    if (app) {
+      const route = app.__container__?.lookup("controller:discovery.category");
+      if (route?.category) {
+        return {
+          id: route.category.id,
+          name: route.category.name,
+          subcategory_list: route.category.subcategory_list,
+        };
+      }
+    }
+  } catch (e) {
+    // Ignoriere Fehler
+  }
+
+  return null;
+}
 
 function addFilesButtonIfNotExists(category) {
   // Prüfen ob Button bereits existiert
@@ -27,15 +61,31 @@ function addFilesButtonIfNotExists(category) {
     return;
   }
 
-  // Button-Container finden (z.B. category-header oder category-title-buttons)
-  const header = document.querySelector(".category-header") || 
-                 document.querySelector(".category-title-buttons") ||
-                 document.querySelector(".category-header-contents");
+  // Button-Container finden - verschiedene mögliche Selektoren
+  const header = document.querySelector(".category-title-buttons") ||
+                 document.querySelector(".category-header") || 
+                 document.querySelector(".category-header-contents") ||
+                 document.querySelector(".category-title") ||
+                 document.querySelector(".category-box") ||
+                 document.querySelector(".category-title-wrapper");
 
   if (!header) {
+    // Wenn kein Header gefunden, versuche nach dem Category-Title zu suchen
+    const categoryTitle = document.querySelector(".category-title h1");
+    if (categoryTitle && categoryTitle.parentElement) {
+      const wrapper = categoryTitle.parentElement;
+      const buttonContainer = document.createElement("div");
+      buttonContainer.className = "category-title-buttons";
+      wrapper.appendChild(buttonContainer);
+      addButtonToContainer(buttonContainer, category);
+    }
     return;
   }
 
+  addButtonToContainer(header, category);
+}
+
+function addButtonToContainer(container, category) {
   // Button erstellen
   const button = document.createElement("button");
   button.className = "btn btn-default category-files-button category-files-button-dynamic";
@@ -45,8 +95,8 @@ function addFilesButtonIfNotExists(category) {
     openFilesPopup(null, category);
   });
 
-  // Button zum Header hinzufügen
-  header.appendChild(button);
+  // Button zum Container hinzufügen
+  container.appendChild(button);
 }
 
 function openFilesPopup(apiOrNull, category) {
